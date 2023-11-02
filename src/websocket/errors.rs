@@ -1,5 +1,7 @@
 use std::error::{Error};
 use std::fmt;
+
+#[allow(unused_imports)]
 use tungstenite::error::{Error as TungsteniteError, CapacityError};
 
 
@@ -16,8 +18,12 @@ impl WebSocketError {
     pub fn handle_tungstenite_error(&self, error: TungsteniteError) -> WebSocketError {
         match error {
             TungsteniteError::AlreadyClosed => WebSocketError::WebSocketClosed,
+
             TungsteniteError::ConnectionClosed => WebSocketError::WebSocketClosed,
+
+            #[allow(non_snake_case)]
             TungsteniteError::Capacity(_CapacityError) => WebSocketError::MessageSizeOutOfBounds,
+            
             _ => WebSocketError::GenericError
         }
     }

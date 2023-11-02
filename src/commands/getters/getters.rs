@@ -18,13 +18,13 @@ impl <'a> ChainGetter<'a> {
         
         let req = object!{
             method: "call",
-            params: [2, "get_chain_id", []],
-            id: 3
+            params: [0, "get_chain_id", []],
+            id: 1
         };
 
         let ws = Rc::clone(&self.ws_service);
 
-        ws.borrow_mut().send(req);
+        let _ = ws.borrow_mut().send(req);
 
         let result = ws.borrow_mut().receive();
 

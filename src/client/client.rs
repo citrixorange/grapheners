@@ -30,9 +30,9 @@ impl <'a> GrapheneClient<'a> {
 
         let ws = Rc::clone(&self.ws_service);
 
-        ws.borrow_mut().send(req);
+        let _ = ws.borrow_mut().send(req);
 
-        let result = ws.borrow_mut().receive();
+        let _result = ws.borrow_mut().receive();
 
         let req = object!{
             method: "call",
@@ -42,8 +42,8 @@ impl <'a> GrapheneClient<'a> {
 
         let ws = Rc::clone(&self.ws_service);
 
-        ws.borrow_mut().send(req);
+        let _ = ws.borrow_mut().send(req);
 
-        let result = ws.borrow_mut().receive();
+        let _result = ws.borrow_mut().receive();
     }
 }

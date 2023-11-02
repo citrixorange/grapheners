@@ -12,15 +12,15 @@ fn main () {
     let mut ws_service = WebSocket::new(&mut concrete_ws);
     let mut graphene_client = GrapheneClient::new(&mut ws_service);
 
-    graphene_client.connect();
-    graphene_client.chain_getter.get_chain_id();
+    let _ = graphene_client.connect();
+    let _ = graphene_client.chain_getter.get_chain_id();
 
 
 
 /*
     let req = object!{
         method: "call",
-        params: [2, "get_full_accounts", [["joseph"], false]],
+        params: [2, "get_full_accounts", [[""], false]],
         id: 4
     };
 
