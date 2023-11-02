@@ -81,6 +81,7 @@ impl IWebSocket for Tungstenite {
         if let Some(socket) = self.socket.as_mut() {
             match socket.close(None) {
                 Ok(_sucess) => {
+                    self.socket = None;
                     return Ok(());
                 }
                 Err(_err) => {
