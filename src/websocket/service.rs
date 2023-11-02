@@ -23,4 +23,8 @@ impl <'a> WebSocket<'a> {
         return self.socket.receive();
     }
 
+    pub fn close(&mut self) -> Result<bool, WebSocketError> {
+        return self.socket.close();
+    }
+
 }

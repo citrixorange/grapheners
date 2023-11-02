@@ -62,4 +62,15 @@ impl IWebSocket for Tungstenite {
             }
         }
     }
+
+    fn close(&mut self) -> Result<bool, WebSocketError> {
+        match self.socket.as_mut().expect(&self.connection_msg).close(None) {
+            Ok(_sucess) => {
+                return Ok(true);
+            }
+            Err(_err) => {
+                return Err(WebSocketError::GenericError);
+            }
+        }
+    }
 }
