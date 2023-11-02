@@ -6,71 +6,89 @@ use json::{JsonValue, object, stringify};
 use serde_json;
 
 pub struct Tungstenite {
-    socket: Result<WebSocket<MaybeTlsStream<TcpStream>>, WebSocketError>,
-    connection_msg: String
+    socket: Option<WebSocket<MaybeTlsStream<TcpStream>>>,
+    url: String
 }
 
 impl Tungstenite {
     pub fn new(url: String) -> Self {
-        match connect(Url::parse(&url).unwrap()) {
-            Ok(result) => {
-                let (socket, response) = result;
-                let (_parts, body) = response.into_parts();
-                let connection_msg = serde_json::to_string_pretty(&body).unwrap();
-                let socket = Ok(socket);
-                Self { socket, connection_msg}
-            },
-            Err(_err) => {
-                let socket = Err(WebSocketError::ConnectionError);
-                let connection_msg = String::from("Cannot connect");
-                Self { socket, connection_msg}
-            }
+        Self {
+            socket: None,
+            url: url
         }
     }
 }
 
 impl IWebSocket for Tungstenite {
 
-    fn connect(&mut self) -> Result<bool, WebSocketError> {
-        println!("{}", self.connection_msg);
-        match self.socket {
-            Ok(_) => return Ok(true),
-            Err(err) => return Err(err)
+    fn connect(&mut self) -> Result<(), WebSocketError> {
+        match connect(Url::parse(self.url.as_ref()).unwrap()) {
+            Ok(result) => {
+                let (socket, response) = result;
+                let (_parts, body) = response.into_parts();
+                let connection_msg = serde_json::to_string_pretty(&body).unwrap();
+                println!("{}", connection_msg);
+                self.socket = Some(socket);
+                return Ok(());
+            },
+            Err(_err) => {
+                return Err(WebSocketError::ConnectionError);
+            }
         }
     }
 
-    fn send(&mut self, msg:JsonValue) -> Result<bool, WebSocketError> {
+    fn send(&mut self, msg:JsonValue) -> Result<(), WebSocketError> {
 
-        match self.socket.as_mut().expect(&self.connection_msg).write_message(Message::Text(stringify(msg))) {
-            Ok(_result) => return Ok(true),
-            Err(err) => return Err(WebSocketError::GenericError.handle_tungstenite_error(err))
+        if let Some(socket) = self.socket.as_mut() {
+            match socket.write_message(Message::Text(stringify(msg))) {
+                Ok(_) => {
+                    return Ok(());
+                }
+                Err(_err) => {
+                    return Err(WebSocketError::MessageSendError);
+                }
+            }
+        } else {
+            return Err(WebSocketError::NotConnected);
         }
     }
 
     fn receive(&mut self) -> Result<JsonValue, WebSocketError> {
-        match self.socket.as_mut().expect(&self.connection_msg).read_message() {
-            Ok(msg) => {
-                println!("Received: {}", msg);
-                let req = object!{
-                    msg: msg.into_text().unwrap()
-                };
-                return Ok(req);
+
+        if let Some(socket) = self.socket.as_mut() {
+            match socket.read_message() {
+                Ok(msg) => {
+                    println!("Received: {}", msg);
+                    let req = object!{
+                        msg: msg.into_text().unwrap()
+                    };
+                    return Ok(req);
+                }
+                Err(_e) => {
+                    println!("Error on receive messaging");
+                    return Err(WebSocketError::MessageReceiveError)
+                }
             }
-            Err(_e) => {
-                println!("Error on receive messaging");
-                return Err(WebSocketError::MessageReceiveError)
-            }
+        } else {
+            return Err(WebSocketError::NotConnected);
         }
+
+
     }
 
-    fn close(&mut self) -> Result<bool, WebSocketError> {
-        match self.socket.as_mut().expect(&self.connection_msg).close(None) {
-            Ok(_sucess) => {
-                return Ok(true);
+    fn close(&mut self) -> Result<(), WebSocketError> {
+
+        if let Some(socket) = self.socket.as_mut() {
+            match socket.close(None) {
+                Ok(_sucess) => {
+                    return Ok(());
+                }
+                Err(_err) => {
+                    return Err(WebSocketError::WebSocketNotClosed);
+                }
             }
-            Err(_err) => {
-                return Err(WebSocketError::GenericError);
-            }
+        } else {
+            return Err(WebSocketError::NotConnected);
         }
     }
 }

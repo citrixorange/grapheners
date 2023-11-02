@@ -11,11 +11,11 @@ impl <'a> WebSocket<'a> {
         Self { socket }
     }
 
-    pub fn connect(&mut self) -> Result<bool, WebSocketError> {
+    pub fn connect(&mut self) -> Result<(), WebSocketError> {
         return self.socket.connect();
     }
 
-    pub fn send(&mut self, msg:JsonValue) -> Result<bool, WebSocketError> {
+    pub fn send(&mut self, msg:JsonValue) -> Result<(), WebSocketError> {
         return self.socket.send(msg);
     }
 
@@ -23,7 +23,7 @@ impl <'a> WebSocket<'a> {
         return self.socket.receive();
     }
 
-    pub fn close(&mut self) -> Result<bool, WebSocketError> {
+    pub fn close(&mut self) -> Result<(), WebSocketError> {
         return self.socket.close();
     }
 
