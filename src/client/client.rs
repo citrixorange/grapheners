@@ -55,4 +55,8 @@ impl <'a> GrapheneClient<'a> {
 
         return Ok(());
     }
+
+    pub fn close(&mut self) -> Result<(),WebSocketError> {
+        return self.ws_service.borrow_mut().close();
+    }
 }

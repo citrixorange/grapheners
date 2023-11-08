@@ -13,18 +13,9 @@ fn main () {
     let mut graphene_client = GrapheneClient::new(&mut ws_service);
 
     let _ = graphene_client.connect();
-    let _ = graphene_client.chain_getter.get_chain_id();
+
+    let _ = graphene_client.close();
 
 
-
-/*
-    let req = object!{
-        method: "call",
-        params: [2, "get_full_accounts", [[""], false]],
-        id: 4
-    };
-
-    ws_service.send(req);
-    ws_service.receive();*/
 
 }
