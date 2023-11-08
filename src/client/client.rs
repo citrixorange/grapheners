@@ -1,9 +1,10 @@
 use std::rc::Rc;
 use std::cell::RefCell;
-use json::{object};
+use serde_json::{json, Value};
 
 use crate::commands::getters::getters::ChainGetter;
 use crate::WebSocket;
+use crate::websocket::errors::WebSocketError;
 
 pub struct GrapheneClient<'a> {
     ws_service: Rc<RefCell<&'a mut WebSocket<'a>>>,
@@ -20,30 +21,38 @@ impl <'a> GrapheneClient<'a> {
         }
     }
 
-    pub fn connect(&mut self) {
+    pub fn connect(&mut self) -> Result<(),WebSocketError> {
+        return self.ws_service.borrow_mut().connect();
+    }
 
-        let req = object!{
-            method: "call",
-            params: [1, "login", ["",""]],
-            id: 1
-        };
+    pub fn login(&mut self, username: Option<String>, password: Option<String>) -> Result<(),WebSocketError> {
 
-        let ws = Rc::clone(&self.ws_service);
+        let username_json: Value;
+        let password_json: Value;
 
-        let _ = ws.borrow_mut().send(req);
+        if let Some(user_name) = username {
+            username_json = json!(user_name);
+        } else {
+            username_json = json!("");
+        }
 
-        let _result = ws.borrow_mut().receive();
+        if let Some(pass) = password {
+            password_json = json!(pass);
+        } else {
+            password_json = json!("");
+        }
 
-        let req = object!{
-            method: "call",
-            params: [1, "database", []],
-            id: 2
-        };
+        let req = json!({
+            "method": "call",
+            "params": [1, "login", [username_json, password_json]],
+            "id": 1
+        });
 
-        let ws = Rc::clone(&self.ws_service);
+        self.ws_service.borrow_mut().send(req)?;
+        let result = self.ws_service.borrow_mut().receive()?;
 
-        let _ = ws.borrow_mut().send(req);
+        println!("Login Response: {:?}", result);
 
-        let _result = ws.borrow_mut().receive();
+        return Ok(());
     }
 }

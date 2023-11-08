@@ -2,8 +2,7 @@ use std::net::TcpStream;
 use tungstenite::{connect, Message, WebSocket, stream::MaybeTlsStream };
 use url::Url;
 use crate::websocket::{interface::IWebSocket, errors::WebSocketError};
-use json::{JsonValue, object, stringify};
-use serde_json;
+use serde_json::{json, Value};
 
 pub struct Tungstenite {
     socket: Option<WebSocket<MaybeTlsStream<TcpStream>>>,
@@ -37,10 +36,10 @@ impl IWebSocket for Tungstenite {
         }
     }
 
-    fn send(&mut self, msg:JsonValue) -> Result<(), WebSocketError> {
+    fn send(&mut self, msg:Value) -> Result<(), WebSocketError> {
 
         if let Some(socket) = self.socket.as_mut() {
-            match socket.write_message(Message::Text(stringify(msg))) {
+            match socket.write_message(Message::Text(serde_json::to_string(&msg).expect("Failed to serialize JSON"))) {
                 Ok(_) => {
                     return Ok(());
                 }
@@ -53,15 +52,16 @@ impl IWebSocket for Tungstenite {
         }
     }
 
-    fn receive(&mut self) -> Result<JsonValue, WebSocketError> {
+    fn receive(&mut self) -> Result<Value, WebSocketError> {
 
         if let Some(socket) = self.socket.as_mut() {
             match socket.read_message() {
                 Ok(msg) => {
                     println!("Received: {}", msg);
-                    let req = object!{
-                        msg: msg.into_text().unwrap()
-                    };
+                    let message_json = json!(msg.into_text().unwrap());
+                    let req = json!({
+                        "msg": message_json 
+                    });
                     return Ok(req);
                 }
                 Err(_e) => {

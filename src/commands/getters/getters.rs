@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use json::{object, JsonValue};
+use serde_json::{json, Value};
 use crate::websocket::{errors::WebSocketError, service::WebSocket};
 
 pub struct ChainGetter<'a> {
@@ -14,19 +14,17 @@ impl <'a> ChainGetter<'a> {
         Self { ws_service }
     } 
 
-    pub fn get_chain_id(&mut self) -> Result<JsonValue, WebSocketError> {
+    pub fn get_chain_id(&mut self) -> Result<Value, WebSocketError> {
         
-        let req = object!{
-            method: "call",
-            params: [0, "get_chain_id", []],
-            id: 1
-        };
+        let req = json!({
+            "method": "call",
+            "params": [0, "get_chain_id", []],
+            "id": 1
+        });
 
-        let ws = Rc::clone(&self.ws_service);
+        let _ = self.ws_service.borrow_mut().send(req);
 
-        let _ = ws.borrow_mut().send(req);
-
-        let result = ws.borrow_mut().receive();
+        let result = self.ws_service.borrow_mut().receive();
 
         return result;
     }

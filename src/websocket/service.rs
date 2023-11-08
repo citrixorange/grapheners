@@ -1,5 +1,5 @@
 use crate::websocket::{interface::IWebSocket, errors::WebSocketError};
-use json::{JsonValue};
+use serde_json::{Value};
 
 pub struct WebSocket<'a> {
     socket: &'a mut dyn IWebSocket
@@ -15,11 +15,11 @@ impl <'a> WebSocket<'a> {
         return self.socket.connect();
     }
 
-    pub fn send(&mut self, msg:JsonValue) -> Result<(), WebSocketError> {
+    pub fn send(&mut self, msg:Value) -> Result<(), WebSocketError> {
         return self.socket.send(msg);
     }
 
-    pub fn receive(&mut self) -> Result<JsonValue, WebSocketError> {
+    pub fn receive(&mut self) -> Result<Value, WebSocketError> {
         return self.socket.receive();
     }
 
