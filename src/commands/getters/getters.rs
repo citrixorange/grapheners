@@ -14,7 +14,7 @@ impl <'a> ChainGetter<'a> {
         Self { ws_service }
     } 
 
-    pub fn get_chain_id(&mut self) -> Result<Value, WebSocketError> {
+    pub async fn get_chain_id(&mut self) -> Result<Value, WebSocketError> {
         
         let req = json!({
             "method": "call",
@@ -22,11 +22,11 @@ impl <'a> ChainGetter<'a> {
             "id": 1
         });
 
-        let _ = self.ws_service.borrow_mut().send(req);
+        let _ = self.ws_service.borrow_mut().send(req).await?;
 
-        let result = self.ws_service.borrow_mut().receive();
+        let result = self.ws_service.borrow_mut().receive().await?;
 
-        return result;
+        return Ok(result);
     }
 }
 

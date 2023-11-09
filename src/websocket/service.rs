@@ -1,5 +1,7 @@
 use crate::websocket::{interface::IWebSocket, errors::WebSocketError};
 use serde_json::{Value};
+use std::future::Future;
+use std::pin::Pin;
 
 pub struct WebSocket<'a> {
     socket: &'a mut dyn IWebSocket
@@ -15,11 +17,11 @@ impl <'a> WebSocket<'a> {
         return self.socket.connect();
     }
 
-    pub fn send(&mut self, msg:Value) -> Result<(), WebSocketError> {
+    pub fn send(&mut self, msg:Value) -> Pin<Box<dyn Future<Output = Result<(), WebSocketError>> + '_>> {
         return self.socket.send(msg);
     }
 
-    pub fn receive(&mut self) -> Result<Value, WebSocketError> {
+    pub fn receive(&mut self) -> Pin<Box<dyn Future<Output = Result<Value, WebSocketError>> + '_>> {
         return self.socket.receive();
     }
 

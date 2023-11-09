@@ -25,7 +25,7 @@ impl <'a> GrapheneClient<'a> {
         return self.ws_service.borrow_mut().connect();
     }
 
-    pub fn login(&mut self, username: Option<String>, password: Option<String>) -> Result<(),WebSocketError> {
+    pub async fn login(&mut self, username: Option<String>, password: Option<String>) -> Result<(),WebSocketError> {
 
         let username_json: Value;
         let password_json: Value;
@@ -48,8 +48,8 @@ impl <'a> GrapheneClient<'a> {
             "id": 1
         });
 
-        self.ws_service.borrow_mut().send(req)?;
-        let result = self.ws_service.borrow_mut().receive()?;
+        self.ws_service.borrow_mut().send(req).await?;
+        let result = self.ws_service.borrow_mut().receive().await?;
 
         println!("Login Response: {:?}", result);
 

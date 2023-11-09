@@ -6,7 +6,8 @@ mod websocket;
 mod commands;
 mod client;
 
-fn main () {
+#[tokio::main]
+async fn main () {
 
     let mut concrete_ws = Tungstenite::new(String::from("wss://127.0.0.1:8090"));
     let mut ws_service = WebSocket::new(&mut concrete_ws);
@@ -14,8 +15,10 @@ fn main () {
 
     let _ = graphene_client.connect();
 
+    let result = graphene_client.chain_getter.get_chain_id().await;
+
+    println!("{:?}", result.unwrap());
+
     let _ = graphene_client.close();
-
-
 
 }
