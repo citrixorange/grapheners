@@ -13,7 +13,7 @@ impl <'a> WebSocket<'a> {
         Self { socket }
     }
 
-    pub fn connect(&mut self) -> Result<(), WebSocketError> {
+    pub fn connect(&mut self) -> Pin<Box<dyn Future<Output = Result<(), WebSocketError>> + '_>> {
         return self.socket.connect();
     }
 
@@ -25,7 +25,7 @@ impl <'a> WebSocket<'a> {
         return self.socket.receive();
     }
 
-    pub fn close(&mut self) -> Result<(), WebSocketError> {
+    pub fn close(&mut self) -> Pin<Box<dyn Future<Output = Result<(), WebSocketError>> + '_>> {
         return self.socket.close();
     }
 
