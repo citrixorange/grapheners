@@ -21,8 +21,8 @@ impl <'a> GrapheneClient<'a> {
         }
     }
 
-    pub fn connect(&mut self) -> Result<(),WebSocketError> {
-        return self.ws_service.borrow_mut().connect();
+    pub async fn connect(&mut self) -> Result<(),WebSocketError> {
+        return self.ws_service.borrow_mut().connect().await;
     }
 
     pub async fn login(&mut self, username: Option<String>, password: Option<String>) -> Result<(),WebSocketError> {
@@ -56,7 +56,7 @@ impl <'a> GrapheneClient<'a> {
         return Ok(());
     }
 
-    pub fn close(&mut self) -> Result<(),WebSocketError> {
-        return self.ws_service.borrow_mut().close();
+    pub async fn close(&mut self) -> Result<(),WebSocketError> {
+        return self.ws_service.borrow_mut().close().await;
     }
 }
