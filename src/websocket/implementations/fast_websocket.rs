@@ -64,9 +64,10 @@ impl FromStr for WebsocketCloseRequest {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "WebsocketCloseRequest::Close" => Ok(WebsocketCloseRequest::Close),
-            _ => Err(())
+        if s == "\"WebsocketCloseRequest::Close\"" {
+            return Ok(WebsocketCloseRequest::Close);
+        } else {
+            return Err(());
         }
     }
 }
@@ -135,10 +136,14 @@ impl IWebSocket for FastWebsocketClient {
     
                             if let Some(send_msg) = rx.recv().await {
 
-                                match send_msg.to_string().parse::<WebsocketCloseRequest>() {
+                                let result_str: &str = &send_msg.to_string();
+                                println!("{}", result_str);
+
+                                //println!("{:?}", &send_msg);
+
+                                match result_str.parse::<WebsocketCloseRequest>() {
                                     Ok(_close) => {
                                         println!("WebSocket close has been requested.");
-                                        println!("Closing Sender Task...");
                                         break;
                                     },
                                     Err(_e) => {
@@ -157,6 +162,8 @@ impl IWebSocket for FastWebsocketClient {
                             }
     
                         }
+
+                        println!("Closing Sender Task...");
     
                     });
 
@@ -171,10 +178,10 @@ impl IWebSocket for FastWebsocketClient {
                         loop {
 
                             if let Ok(Some(result)) = tokio::time::timeout(Duration::from_millis(100), rx.recv()).await {
-                                match result.to_string().parse::<WebsocketCloseRequest>() {
+                                let result_str: &str = &result.to_string();
+                                match result_str.parse::<WebsocketCloseRequest>() {
                                     Ok(_close) => {
                                         println!("WebSocket close has been requested.");
-                                        println!("Closing Sender Task...");
                                         break;
                                     },
                                     Err(_e) => {
@@ -193,7 +200,6 @@ impl IWebSocket for FastWebsocketClient {
                                         message
                                     },
                                     Err(e) => {
-                                        eprintln!("Reconnecting from an Error: {e:?}");
                                         drop(guard);
                                         break; // break the message loop then reconnect
                                      }
@@ -214,7 +220,8 @@ impl IWebSocket for FastWebsocketClient {
                                 }
 
                                 OpCode::Close => {
-                                    println!("Error Close Websocket Requested");
+                                    println!("Websocket Close Requested");
+                                    break; // break the message loop then reconnect
                                 }
 
                                 _ => {
@@ -223,6 +230,8 @@ impl IWebSocket for FastWebsocketClient {
                             }
 
                         }
+
+                        println!("Closing Receiver Task...");
     
                     });
     

@@ -58,15 +58,15 @@ impl FromStr for WebSocketError {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "WebSocketError::ConnectionError" => Ok(WebSocketError::ConnectionError),
-            "WebSocketError::WebSocketNotClosed" => Ok(WebSocketError::WebSocketNotClosed),
-            "WebSocketError::MessageSendError" => Ok(WebSocketError::MessageSendError),
-            "WebSocketError::MessageReceiveError" => Ok(WebSocketError::MessageReceiveError),
-            "WebSocketError::NotConnected" => Ok(WebSocketError::NotConnected),
-            "WebSocketError::ErrorGetSocketLockFromSenderTask" => Ok(WebSocketError::ErrorGetSocketLockFromSenderTask),
-            "WebSocketError::ErrorGetSocketLockFromReceiverTask" => Ok(WebSocketError::ErrorGetSocketLockFromReceiverTask),
-            "WebSocketError::ErrorSenderChannel" => Ok(WebSocketError::ErrorSenderChannel),
-            "WebSocketError::ErrorReceiverChannel" => Ok(WebSocketError::ErrorReceiverChannel),
+            "\"WebSocketError::ConnectionError\"" => Ok(WebSocketError::ConnectionError),
+            "\"WebSocketError::WebSocketNotClosed\"" => Ok(WebSocketError::WebSocketNotClosed),
+            "\"WebSocketError::MessageSendError\"" => Ok(WebSocketError::MessageSendError),
+            "\"WebSocketError::MessageReceiveError\"" => Ok(WebSocketError::MessageReceiveError),
+            "\"WebSocketError::NotConnected\"" => Ok(WebSocketError::NotConnected),
+            "\"WebSocketError::ErrorGetSocketLockFromSenderTask\"" => Ok(WebSocketError::ErrorGetSocketLockFromSenderTask),
+            "\"WebSocketError::ErrorGetSocketLockFromReceiverTask\"" => Ok(WebSocketError::ErrorGetSocketLockFromReceiverTask),
+            "\"WebSocketError::ErrorSenderChannel\"" => Ok(WebSocketError::ErrorSenderChannel),
+            "\"WebSocketError::ErrorReceiverChannel\"" => Ok(WebSocketError::ErrorReceiverChannel),
             _ => Err(())
         }
     }
