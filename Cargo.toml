@@ -7,9 +7,11 @@ edition = "2021"
 
 [dependencies]
 tungstenite = "0.17.3"
+serde = { version = "1.0.192", features = ["derive"]}
 serde_json = "1.0.83"
 json = "0.12.4"
 url = "2.2.2"
 tokio = { version = "1.33.0", features = ["full"] }
 tokio-util = "0.7.10"
 fast_websocket_client = "0.1.2"
+lazy_static = "1.4.0"

@@ -5,6 +5,7 @@ use crate::client::client::GrapheneClient;
 mod websocket;
 mod commands;
 mod client;
+mod config;
 
 #[tokio::main]
 async fn main () {
@@ -15,9 +16,7 @@ async fn main () {
 
     graphene_client.connect().await.expect("Failed to establish websocket connection with server");
 
-    let result = graphene_client.chain_getter.get_chain_id().await.expect("Failed to fetch chain id from Blockchain Node Server");
-
-    println!("{:?}", result);
+    graphene_client.init().await.expect("Failed to Initialize Client...");
 
     graphene_client.close().await.expect("Failed to close websocket connection");
 

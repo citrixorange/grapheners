@@ -1,0 +1,16 @@
+{
+    "custom_apis": [
+        {
+            "id": 1,
+            "name": "custom_api_one"
+        },
+        {
+            "id": 2,
+            "name": "custom_api_two"
+        },
+        {
+            "id": 3,
+            "name": "custom_api_three"
+        }
+    ]
+}
