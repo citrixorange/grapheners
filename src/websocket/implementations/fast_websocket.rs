@@ -1,84 +1,20 @@
-use fast_websocket_client::{client, connect, OpCode};
+use fast_websocket_client::{client, connect};
 use std::sync::Arc;
 use tokio::task;
 use tokio::sync::Mutex;
-use tokio::sync::mpsc::{Sender, Receiver, channel};
-use serde_json::{json, Value};
+use tokio::sync::mpsc::{Sender, Receiver};
+use serde_json::Value;
 use std::future::Future;
 use std::pin::Pin;
-use std::time::Duration;
-use std::str::FromStr;
-use crate::websocket::{interface::IWebSocket, errors::WebSocketError};
 
-struct MessageChannel {
-    sender: Option<Sender<Value>>,
-    receiver: Option<Receiver<Value>>,
-}
-
-impl MessageChannel {
-    pub fn new() -> Self {
-        Self {
-            sender: None,
-            receiver: None
-        }
+use crate::websocket::{
+    interface::IWebSocket, 
+    errors::WebSocketError,
+    implementations::{
+        message_channel::{MessageChannel, WebsocketCloseRequest},
+        listeners::{spawn_sender_task, spawn_receiver_task}
     }
-
-    pub fn create_channel(&mut self) -> (Sender<Value>,Receiver<Value>) {
-        let (sender, rx) = channel::<Value>(100);
-        let (tx, receiver) = channel::<Value>(100);
-        self.sender = Some(sender);
-        self.receiver = Some(receiver);
-        return (tx,rx);
-    }
-
-    pub async fn send(&self, msg: Value) -> Result<(), WebSocketError> {
-        if let Some(sender) = &self.sender {
-            if let Ok(_res) = sender.send_timeout(msg, Duration::from_secs(1)).await {
-                return Ok(());
-            } else {
-                return Err(WebSocketError::ErrorSenderChannel);
-            }
-        } else {
-            return Err(WebSocketError::ErrorSenderChannel);
-        }
-    }
-
-    pub async fn recv(&mut self) -> Result<Option<Value>, WebSocketError> {
-        if let Some(receiver) = &mut self.receiver {
-            if let Ok(Some(result)) = tokio::time::timeout(Duration::from_secs(3), receiver.recv()).await {
-                return Ok(Some(result));
-            } else {
-                return Err(WebSocketError::ErrorReceiverChannel);
-            }
-        } else {
-            return Err(WebSocketError::ErrorReceiverChannel);
-        }
-    }
-}
-
-enum WebsocketCloseRequest {
-    Close
-}
-
-impl FromStr for WebsocketCloseRequest {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s == "\"WebsocketCloseRequest::Close\"" {
-            return Ok(WebsocketCloseRequest::Close);
-        } else {
-            return Err(());
-        }
-    }
-}
-
-impl From<WebsocketCloseRequest> for Value {
-    fn from(request: WebsocketCloseRequest) -> Value {
-        match request {
-            WebsocketCloseRequest::Close => json!("WebsocketCloseRequest::Close"),
-        }
-    }
-}
+};
 
 pub struct FastWebsocketClient {
     socket: Option<Arc<Mutex<client::Online>>>,
@@ -130,40 +66,7 @@ impl IWebSocket for FastWebsocketClient {
 
                     task::spawn(async move {
 
-                        let socket = clone_socket;
-    
-                        loop {
-    
-                            if let Some(send_msg) = rx.recv().await {
-
-                                let result_str: &str = &send_msg.to_string();
-                                println!("{}", result_str);
-
-                                //println!("{:?}", &send_msg);
-
-                                match result_str.parse::<WebsocketCloseRequest>() {
-                                    Ok(_close) => {
-                                        println!("WebSocket close has been requested.");
-                                        break;
-                                    },
-                                    Err(_e) => {
-
-                                    }
-                                }
-
-                                if let Ok(_result) = tokio::time::timeout(Duration::from_secs(1), socket.lock().await.send_json(&send_msg)).await {
-                                    let _ = tx.send(json!("")).await;
-                                } else {
-                                    let _ = tx.send(WebSocketError::MessageSendError.into()).await;
-                                }
-
-                            } else {
-                                let _ = tx.send(WebSocketError::ErrorSenderChannel.into()).await;
-                            }
-    
-                        }
-
-                        println!("Closing Sender Task...");
+                        spawn_sender_task(clone_socket, rx, tx).await;
     
                     });
 
@@ -173,65 +76,7 @@ impl IWebSocket for FastWebsocketClient {
     
                     task::spawn(async move {
     
-                        let socket = clone_socket;
-    
-                        loop {
-
-                            if let Ok(Some(result)) = tokio::time::timeout(Duration::from_millis(100), rx.recv()).await {
-                                let result_str: &str = &result.to_string();
-                                match result_str.parse::<WebsocketCloseRequest>() {
-                                    Ok(_close) => {
-                                        println!("WebSocket close has been requested.");
-                                        break;
-                                    },
-                                    Err(_e) => {
-
-                                    }
-                                }
-                            }
-
-                            let mut guard = socket.lock().await;
-
-                            let message = if let Ok(result) =
-                                tokio::time::timeout(Duration::from_secs(1), guard.receive_frame()).await
-                            {
-                                match result {
-                                    Ok(message) => {
-                                        message
-                                    },
-                                    Err(e) => {
-                                        drop(guard);
-                                        break; // break the message loop then reconnect
-                                     }
-                                }
-                            } else {
-                                drop(guard);
-                                continue;
-                            };
-
-                            match message.opcode {
-                                OpCode::Text => {
-                                    println!("Received: {:?}", String::from_utf8_lossy(message.payload.as_ref()));
-                                    let message_json = json!(String::from_utf8_lossy(message.payload.as_ref()));
-                                    let req = json!({
-                                        "msg": message_json 
-                                    });
-                                    let _ = tx.send(req).await;
-                                }
-
-                                OpCode::Close => {
-                                    println!("Websocket Close Requested");
-                                    break; // break the message loop then reconnect
-                                }
-
-                                _ => {
-                                    println!("Error Unexpected Error");
-                                }
-                            }
-
-                        }
-
-                        println!("Closing Receiver Task...");
+                        spawn_receiver_task(clone_socket, rx, tx).await;
     
                     });
     
@@ -281,9 +126,7 @@ impl IWebSocket for FastWebsocketClient {
                 if let Ok(Some(msg)) = channel.recv().await {
                     let _deserialized_error: WebSocketError = match msg.to_string().parse() {
                         Ok(error) => return Err(error),
-                        Err(_message) => {
-                            return Ok(msg);
-                        }
+                        Err(_message) => return Ok(msg)
                     };
                 } else {
                     return Err(WebSocketError::MessageReceiveError);
