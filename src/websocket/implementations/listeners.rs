@@ -4,6 +4,8 @@ use tokio::sync::Mutex;
 use tokio::sync::mpsc::{Sender, Receiver};
 use serde_json::{json, Value};
 use std::time::Duration;
+use crate::config::config::CONFIG;
+use crate::websocket::implementations::timeouts::Timeout;
 
 use crate::websocket::{
     errors::WebSocketError,
@@ -30,8 +32,10 @@ pub async fn spawn_sender_task(
             }
 
             if let Ok(_result) =
-                tokio::time::timeout(Duration::from_secs(1), socket.lock().await.send_json(&send_msg))
-                    .await
+                tokio::time::timeout(
+                    Duration::from_millis(CONFIG.get_timeout(Timeout::WebSocketSend)),
+                    socket.lock().await.send_json(&send_msg)
+                ).await
             {
                 let _ = tx.send(json!("")).await;
             } else {
@@ -53,7 +57,10 @@ pub async fn spawn_receiver_task(
     
     loop {
 
-        if let Ok(Some(result)) = tokio::time::timeout(Duration::from_millis(100), rx.recv()).await {
+        if let Ok(Some(result)) = tokio::time::timeout(
+            Duration::from_millis(CONFIG.get_timeout(Timeout::WebsocketClose)), 
+            rx.recv()
+        ).await {
             let result_str: &str = &result.to_string();
             match result_str.parse::<WebsocketCloseRequest>() {
                 Ok(_close) => {
@@ -69,7 +76,10 @@ pub async fn spawn_receiver_task(
         let mut guard = socket.lock().await;
 
         let message = if let Ok(result) =
-            tokio::time::timeout(Duration::from_secs(1), guard.receive_frame()).await
+            tokio::time::timeout(
+                Duration::from_millis(CONFIG.get_timeout(Timeout::WebSocketReceive)),
+        guard.receive_frame()
+            ).await
         {
             match result {
                 Ok(message) => {

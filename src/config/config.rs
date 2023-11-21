@@ -4,6 +4,8 @@ use serde::Deserialize;
 use lazy_static::lazy_static;
 use std::iter::FromIterator;
 
+use crate::websocket::implementations::timeouts::Timeout;
+
 lazy_static! {
     pub static ref CONFIG: Config = {
         // Open the file
@@ -22,6 +24,7 @@ lazy_static! {
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    timeouts: Timeouts,
     custom_apis: Vec<CustomApi>
 }
 
@@ -32,6 +35,10 @@ impl Config {
             .find(|api| api.id == id)
             .map(|api| api.name.clone())
             .unwrap_or(String::from(""))
+    }
+
+    pub fn get_timeout(&self, timeout: Timeout) -> u64 {
+        return self.timeouts.get_timeout(timeout);
     }
 }
 
@@ -44,5 +51,22 @@ struct CustomApi {
 impl<'a> FromIterator<&'a CustomApi> for Vec<CustomApi> {
     fn from_iter<I: IntoIterator<Item = &'a CustomApi>>(iter: I) -> Self {
         iter.into_iter().cloned().collect()
+    }
+}
+
+#[derive(Debug, Deserialize)]
+struct Timeouts {
+    ws_send: u64,
+    ws_receive: u64,
+    ws_close: u64
+}
+
+impl Timeouts {
+    pub fn get_timeout(&self, timeout: Timeout) -> u64 {
+        match timeout {
+            Timeout::WebSocketSend => self.ws_send,
+            Timeout::WebSocketReceive => self.ws_receive,
+            Timeout::WebsocketClose => self.ws_close
+        }
     }
 }

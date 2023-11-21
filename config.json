@@ -1,4 +1,9 @@
 {
+    "timeouts": {
+        "ws_send": 1000,
+        "ws_receive": 1000,
+        "ws_close": 100
+    },
     "custom_apis": [
         {
             "id": 1,
