@@ -9,14 +9,13 @@ use crate::websocket::implementations::timeouts::Timeout;
 lazy_static! {
     pub static ref CONFIG: Config = {
         // Open the file
-        let file_path = "../../config.json";
+        let file_path = "/home/cesar/Projects/grapheners/config.json";
+        
         let mut file = File::open(file_path).expect("Unable to open config file");
-
         // Read the file contents into a string
         let mut file_contents = String::new();
         file.read_to_string(&mut file_contents)
             .expect("Unable to read config file");
-
         // Deserialize the JSON data into your config struct
         serde_json::from_str(&file_contents).expect("Unable to parse config JSON")
     };

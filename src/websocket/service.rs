@@ -1,5 +1,5 @@
 use crate::websocket::{interface::IWebSocket, errors::WebSocketError};
-use serde_json::{Value};
+use serde_json::Value;
 use std::future::Future;
 use std::pin::Pin;
 
@@ -7,7 +7,7 @@ pub struct WebSocket<'a> {
     socket: &'a mut dyn IWebSocket
 }
 
-impl <'a> WebSocket<'a> {
+impl <'a>WebSocket<'a> {
 
     pub fn new(socket: &'a mut dyn IWebSocket) -> Self {
         Self { socket }

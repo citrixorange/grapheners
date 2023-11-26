@@ -19,59 +19,97 @@ struct ChainWebsocketNumberResponse {
 }
 
 pub struct ChainGetter<'a> {
-    ws_service: Rc<RefCell<&'a mut WebSocket<'a>>>
+    ws_service: Option<Rc<RefCell<&'a mut WebSocket<'a>>>>
 } 
 
-impl <'a> ChainGetter<'a> {
+impl <'a>ChainGetter<'a> {
 
-    pub fn new(ws_service: Rc<RefCell<&'a mut WebSocket<'a>>>) -> Self {
-        Self { ws_service }
-    } 
+    pub fn new() -> Self {
+        Self { ws_service: None }
+    }
+
+    pub fn set_ws_connection(&mut self, ws: Rc<RefCell<&'a mut WebSocket<'a>>>) {
+        self.ws_service = Some(ws);
+    }
 
     pub async fn get_chain_id(&mut self) -> Result<String, WebSocketError> {
-        
-        let req = json!({
-            "method": "call",
-            "params": [0, "get_chain_id", []],
-            "id": 1
-        });
 
-        let _ = self.ws_service.borrow_mut().send(req).await?;
+        if let Some(ws) = &self.ws_service {
 
-        let result = self.ws_service.borrow_mut().receive().await?;
+            let req = json!({
+                "method": "call",
+                "params": [0, "get_chain_id", []],
+                "id": 1
+            });
+            
+            let _ = ws.borrow_mut().send(req).await?;
 
-        let websocket_response:Result<ChainWebsocketStringResponse,serde_json::Error> = serde_json::from_value(result);
+            let result = ws.borrow_mut().receive().await?;
 
-        if let Ok(response) = websocket_response {
-            return Ok(response.result);
+            let websocket_response:Result<ChainWebsocketStringResponse,serde_json::Error> = serde_json::from_value(result);
+
+            if let Ok(response) = websocket_response {
+                return Ok(response.result);
+            } else {
+                return Err(WebSocketError::MessageReceiveError);
+            }
+
         } else {
-            return Err(WebSocketError::MessageReceiveError);
+            return Err(WebSocketError::NotConnected);
         }
         
     }
 
     pub async fn get_chain_api_id(&mut self, api: GrapheneApi) -> Result<u8, WebSocketError> {
-        
-        let api_name: String = api.into();
 
-        let req = json!({
-            "method": "call",
-            "params": [1, api_name.as_str(), []],
-            "id": 1
-        });
+        if let Some(ws) = &self.ws_service {
 
-        let _ = self.ws_service.borrow_mut().send(req).await?;
+            let api_name: String = api.into();
 
-        let result = self.ws_service.borrow_mut().receive().await?;
+            let req = json!({
+                "method": "call",
+                "params": [1, api_name.as_str(), []],
+                "id": 1
+            });
+    
+            let _ = ws.borrow_mut().send(req).await?;
+    
+            let result = ws.borrow_mut().receive().await?;
+    
+            let websocket_response:Result<ChainWebsocketNumberResponse,serde_json::Error> = serde_json::from_value(result);
+    
+            if let Ok(response) = websocket_response {
+                return Ok(response.result);
+            } else {
+                return Err(WebSocketError::MessageReceiveError);
+            }
 
-        let websocket_response:Result<ChainWebsocketNumberResponse,serde_json::Error> = serde_json::from_value(result);
-
-        if let Ok(response) = websocket_response {
-            return Ok(response.result);
         } else {
-            return Err(WebSocketError::MessageReceiveError);
+            return Err(WebSocketError::NotConnected);
         }
         
+    }
+
+    pub async fn get_chain_objects(&mut self, objects: Vec<String>) -> Result<(), WebSocketError> {
+
+        if let Some(ws) = &self.ws_service {
+
+            let req = json!({
+                "method": "call",
+                "params": [0, "get_objects", [objects]],
+                "id": 1
+            });
+    
+            let _ = ws.borrow_mut().send(req).await?;
+    
+            let _result = ws.borrow_mut().receive().await?;
+    
+            return Ok(());
+
+        } else {
+            return Err(WebSocketError::NotConnected);
+        }
+
     }
 
 }

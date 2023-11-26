@@ -14,10 +14,9 @@ pub enum WebSocketError {
     MessageSendError,
     MessageReceiveError,
     NotConnected,
-    ErrorGetSocketLockFromSenderTask,
-    ErrorGetSocketLockFromReceiverTask,
     ErrorSenderChannel,
     ErrorReceiverChannel,
+    SubscribingError
     
 }
 
@@ -29,10 +28,9 @@ impl fmt::Display for WebSocketError {
             WebSocketError::MessageSendError => write!(f,"Error on Message Sending on Websocket Service"),
             WebSocketError::MessageReceiveError => write!(f,"Error on Message Receiving on Websocket Service"),
             WebSocketError::NotConnected => write!(f,"Websocket Connection not established"),
-            WebSocketError::ErrorGetSocketLockFromSenderTask => write!(f,"Error get socket lock on Sender Task"),
-            WebSocketError::ErrorGetSocketLockFromReceiverTask => write!(f,"Error get socket lock on Receiver Task"),
             WebSocketError::ErrorSenderChannel => write!(f,"Error receive message on Sender Task"),
             WebSocketError::ErrorReceiverChannel => write!(f,"Error sending message on Receiver Task"),
+            WebSocketError::SubscribingError => write!(f,"Error on subscribing"),
         }
     }
 }
@@ -45,10 +43,9 @@ impl Error for WebSocketError {
             WebSocketError::MessageSendError => "Error on Message Sending on Websocket Service",
             WebSocketError::MessageReceiveError => "Error on Message Receiving on Websocket Service",
             WebSocketError::NotConnected => "Websocket Connection not established",
-            WebSocketError::ErrorGetSocketLockFromSenderTask => "Error get socket lock on Sender Task",
-            WebSocketError::ErrorGetSocketLockFromReceiverTask => "Error get socket lock on Receiver Task",
             WebSocketError::ErrorSenderChannel => "Error receive message on Sender Task",
             WebSocketError::ErrorReceiverChannel => "Error sending message on Receiver Task",
+            WebSocketError::SubscribingError => "Error on subscribing",
         }
     }
 }
@@ -63,10 +60,9 @@ impl FromStr for WebSocketError {
             "\"WebSocketError::MessageSendError\"" => Ok(WebSocketError::MessageSendError),
             "\"WebSocketError::MessageReceiveError\"" => Ok(WebSocketError::MessageReceiveError),
             "\"WebSocketError::NotConnected\"" => Ok(WebSocketError::NotConnected),
-            "\"WebSocketError::ErrorGetSocketLockFromSenderTask\"" => Ok(WebSocketError::ErrorGetSocketLockFromSenderTask),
-            "\"WebSocketError::ErrorGetSocketLockFromReceiverTask\"" => Ok(WebSocketError::ErrorGetSocketLockFromReceiverTask),
             "\"WebSocketError::ErrorSenderChannel\"" => Ok(WebSocketError::ErrorSenderChannel),
             "\"WebSocketError::ErrorReceiverChannel\"" => Ok(WebSocketError::ErrorReceiverChannel),
+            "\"WebSocketError::SubscribingError\"" => Ok(WebSocketError::SubscribingError),
             _ => Err(())
         }
     }
@@ -80,10 +76,9 @@ impl From<WebSocketError> for Value {
             WebSocketError::MessageSendError => json!("WebSocketError::MessageSendError"),
             WebSocketError::MessageReceiveError => json!("WebSocketError::MessageReceiveError"),
             WebSocketError::NotConnected => json!("WebSocketError::NotConnected"),
-            WebSocketError::ErrorGetSocketLockFromSenderTask => json!("WebSocketError::ErrorGetSocketLockFromSenderTask"),
-            WebSocketError::ErrorGetSocketLockFromReceiverTask => json!("WebSocketError::ErrorGetSocketLockFromReceiverTask"),
             WebSocketError::ErrorSenderChannel => json!("WebSocketError::ErrorSenderChannel"),
             WebSocketError::ErrorReceiverChannel => json!("WebSocketError::ErrorReceiverChannel"),
+            WebSocketError::SubscribingError => json!("WebSocketError::SubscribingError"),
         }
     }
 }

@@ -12,14 +12,18 @@ use crate::websocket::{
     errors::WebSocketError,
     implementations::{
         message_channel::{MessageChannel, WebsocketCloseRequest},
-        listeners::{spawn_sender_task, spawn_receiver_task}
+        listeners::{
+            spawn_sender_task, 
+            spawn_receiver_task
+        }
     }
 };
 
 pub struct FastWebsocketClient {
     socket: Option<Arc<Mutex<client::Online>>>,
-    sender_channel: Option<MessageChannel>,
-    receiver_channel: Option<MessageChannel>,
+    sender_channel: Option<MessageChannel<Value>>,
+    receiver_channel: Option<MessageChannel<Value>>,
+    callback_channel: Option<Sender<(u64, Value)>>,
     url: String
 }
 
@@ -29,13 +33,14 @@ impl FastWebsocketClient {
             socket: None,
             sender_channel: None,
             receiver_channel: None,
+            callback_channel: None,
             url: url
         }
     }
 
     fn create_sender_channel(&mut self) -> (Sender<Value>,Receiver<Value>) {
 
-        let mut channel = MessageChannel::new();
+        let mut channel = MessageChannel::<Value>::new();
         let (tx,rx) = channel.create_channel();
         self.sender_channel = Some(channel);
         return (tx, rx);
@@ -43,12 +48,15 @@ impl FastWebsocketClient {
 
     fn create_receiver_channel(&mut self) -> (Sender<Value>,Receiver<Value>) {
 
-        let mut channel = MessageChannel::new();
+        let mut channel = MessageChannel::<Value>::new();
         let (tx,rx) = channel.create_channel();
         self.receiver_channel = Some(channel);
         return (tx, rx);
     }
 
+    pub fn set_callback_channel(&mut self, channel: Sender<(u64, Value)>) {
+        self.callback_channel = Some(channel);
+    }
 
 }
 
@@ -60,9 +68,10 @@ impl IWebSocket for FastWebsocketClient {
                 Ok(ws) => {
 
                     let master_socket = Arc::new(Mutex::new(ws));
+
                     let clone_socket = Arc::clone(&master_socket);
     
-                    let (tx,mut rx) = self.create_sender_channel();
+                    let (tx,rx) = self.create_sender_channel();
 
                     task::spawn(async move {
 
@@ -72,11 +81,13 @@ impl IWebSocket for FastWebsocketClient {
 
                     let clone_socket = Arc::clone(&master_socket);
 
-                    let (tx,mut rx) = self.create_receiver_channel();
+                    let (tx,rx) = self.create_receiver_channel();
+
+                    let tx_cb_call = self.callback_channel.take();
     
                     task::spawn(async move {
     
-                        spawn_receiver_task(clone_socket, rx, tx).await;
+                        spawn_receiver_task(clone_socket, rx, tx, tx_cb_call).await;
     
                     });
     
